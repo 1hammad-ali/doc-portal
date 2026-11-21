@@ -1,0 +1,20 @@
+:root {
+  --gov-primary-emerald: #0B4F32;
+  --gov-emerald-dark: #073622;
+  --gov-emerald-soft: #E8F3EE;
+  --gov-gold-accent: #C59B27;
+  --gov-gold-light: #FBF6E8;
+  --gov-slate-ink: #13201B;
+  --gov-muted-text: #475549;
+  --gov-canvas-bg: #EEF2F0;
+  --gov-card-surface: rgba(255, 255, 255, 0.82);
+  --gov-border: rgba(11, 79, 50, 0.12);
+  --gov-alert-crimson: #B42318;
+  --gov-crimson-light: #FEE4E2;
+  --gov-amber-warn: #B54708;
+  --gov-amber-light: #FEF0C7;
+  
+  --radius-card: 16px;
+  --radius-badge: 9999px;
+  --radius-button: 10px;
+}

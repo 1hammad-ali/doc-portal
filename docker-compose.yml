@@ -1,0 +1,150 @@
+version: '3.8'
+
+services:
+  # ============================================================================
+  # Primary Database: PostgreSQL 16 with Full-Text Search
+  # ============================================================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: govedms-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-govedms_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-GovSecurePassword2026!}
+      POSTGRES_DB: ${POSTGRES_DB:-govedms_production}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-govedms_admin} -d ${POSTGRES_DB:-govedms_production}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - govedms-network
+
+  # ============================================================================
+  # Object Storage: MinIO (S3-Compatible Government Document Vault)
+  # ============================================================================
+  minio:
+    image: minio/minio:RELEASE.2024-05-10T01-41-38Z
+    container_name: govedms-minio
+    restart: always
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-govedms_minio_root}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-MinioGovRootSecret2026!}
+    ports:
+      - "${MINIO_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - govedms-network
+
+  # ============================================================================
+  # Caching & BullMQ Queue: Redis
+  # ============================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: govedms-redis
+    restart: always
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - govedms-network
+
+  # ============================================================================
+  # Python OCR & Barcode Extraction Worker (FastAPI + PyMuPDF + pyzbar)
+  # ============================================================================
+  ocr-worker:
+    build:
+      context: ./ocr-worker
+      dockerfile: Dockerfile
+    container_name: govedms-ocr-worker
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+    networks:
+      - govedms-network
+
+  # ============================================================================
+  # Backend API: Node.js + Express + Prisma ORM
+  # ============================================================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: govedms-backend
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_started
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-govedms_admin}:${POSTGRES_PASSWORD:-GovSecurePassword2026!}@postgres:5432/${POSTGRES_DB:-govedms_production}?schema=public
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-govedms_minio_root}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-MinioGovRootSecret2026!}
+      MINIO_BUCKET_DOCUMENTS: govedms-classified-documents
+      MINIO_USE_SSL: "false"
+      OCR_SERVICE_URL: http://ocr-worker:8000
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-gov_edms_super_secret_jwt_access_token_key_2026_national_pmo}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-gov_edms_super_secret_jwt_refresh_token_key_2026_national_pmo}
+    ports:
+      - "4000:4000"
+    networks:
+      - govedms-network
+
+  # ============================================================================
+  # Frontend: Next.js 15 Executive Government Portal
+  # ============================================================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: govedms-frontend
+    restart: always
+    depends_on:
+      - backend
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:4000/api/v1
+    ports:
+      - "3000:3000"
+    networks:
+      - govedms-network
+
+networks:
+  govedms-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
+  minio_data:
+    driver: local
+  redis_data:
+    driver: local

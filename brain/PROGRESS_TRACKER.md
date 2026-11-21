@@ -133,3 +133,10 @@
   - [x] 100% clickable letter rows opening `LetterSplitDrawer` across Register, Files, and Search.
   - [x] Single-Click Complete File Dossier Download: "Download Complete File (1 PDF)" button (`GET /api/v1/files/:id/download-all`) on each file card in `/files` and within `/files/[id]`.
 - [x] **Automated v3.0 Test Suite (`backend/scripts/smoke-test-v3.js`)**: All 25 end-to-end integration tests verified with 100% pass rate.
+
+## Phase 9: Vercel Production Deployment & Security Patching
+- [x] **Next.js 15.x Security Advisory Upgrade**:
+  - Upgraded `frontend/package.json` and `frontend/package-lock.json` from `next@15.1.0` to `next@15.5.29`.
+  - Resolved critical/high security advisories (Authorization Bypass in Next.js Middleware GHSA-f82v-jwr5-mffw, DoS via Image Optimizer GHSA-9g9p-9gw9-jx7f, HTTP request smuggling in rewrites GHSA-ggv3-7p47-pfv8).
+  - Executed `npm run build` with 100% success across all 17 static & dynamic routes.
+  - Committed and pushed upstream to `main` branch on GitHub (`https://github.com/1hammad-ali/doc-portal.git`).

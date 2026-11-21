@@ -8,3 +8,4 @@
 | ISS-004 | Admin Deletion | Accidental or malicious deletion of government records | Soft deletion only (`deletedAt`, `deletedById`, `deletionReason`) restricted to `SUPER_ADMIN` and `DEPT_ADMIN`, logged immutably in `AuditLog`. |
 | ISS-005 | Barcode Route Aliasing | Hardware scanners and web hooks querying `/api/v1/barcode/:code` vs `/lookup/:code` | Added dual router bindings and positioned `/generate/:code` first to prevent collision with parameter capture. |
 | ISS-006 | Windows Non-Elevated Execution | Docker installation on standard Windows user consoles can prompt UAC | Integrated autonomous native database engine (`embedded-postgres`) ensuring zero manual intervention. |
+| ISS-007 | Next.js 15.1.0 Security Advisory | Vercel blocks deployment on next@15.1.0 due to middleware authorization bypass & DoS advisories | Upgraded frontend to `next@15.5.29` (latest patched 15.x); verified production build passes cleanly with zero errors. |
